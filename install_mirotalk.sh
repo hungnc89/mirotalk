@@ -22,9 +22,21 @@ cp .env.template .env
 # Ask for domain name
 read -p "Enter your domain name (e.g., your.domain.name): " domain_name
 
-# Create a temporary file for Nginx config
-nginx_config="/tmp/mirotalk.conf"
-sudo tee "$nginx_config" > /dev/null <<EOF
+# Ask for email address
+read -p "Enter your email address: " email_address
+
+# Replace placeholders with actual values in Nginx configuration
+sed -i "s/your.domain.name/$domain_name/g" /etc/nginx/sites-available/mirotalk
+sed -i "s/your-email@example.com/$email_address/g" /etc/nginx/sites-available/mirotalk
+
+# Install dependencies
+npm install
+
+# Build the app
+npm run build
+
+# Configure Nginx
+sudo tee /etc/nginx/sites-available/mirotalk <<EOF
 server {
     listen 80;
     server_name $domain_name;
@@ -38,42 +50,20 @@ server {
         proxy_cache_bypass \$http_upgrade;
     }
 }
-
-server {
-    listen 443 ssl http2;
-    server_name $domain_name;
-
-    ssl_certificate /etc/letsencrypt/live/$domain_name/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$domain_name/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:3010;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-    }
-}
 EOF
 
-# Copy the temporary Nginx config to the actual config file
-sudo cp "$nginx_config" /etc/nginx/sites-available/mirotalk
-
-# Enable the site
 sudo ln -s /etc/nginx/sites-available/mirotalk /etc/nginx/sites-enabled/mirotalk
-
-# Remove the temporary file
-rm "$nginx_config"
 
 # Restart Nginx
 sudo systemctl restart nginx
 
 # Install Certbot and obtain SSL certificate
+sudo add-apt-repository -y ppa:certbot/certbot
+sudo apt update
 sudo apt install -y certbot python3-certbot-nginx
 
 # Obtain SSL certificate from Let's Encrypt
-sudo certbot --nginx --agree-tos --redirect --hsts --staple-ocsp --email your-email@example.com -d $domain_name
+sudo certbot --nginx --agree-tos --redirect --hsts --staple-ocsp --email $email_address -d $domain_name
 
 # Install PM2 globally
 sudo npm install -g pm2
