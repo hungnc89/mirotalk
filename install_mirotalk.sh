@@ -63,7 +63,7 @@ sudo npm install -g pm2
 echo "module.exports = {
   apps: [{
     name: 'mirotalk',
-    script: './src/index.js',
+    script: './app/src/server.js',
     cwd: './',
     instances: 1,
     autorestart: true,
