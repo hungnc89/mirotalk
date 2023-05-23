@@ -21,12 +21,10 @@ cp .env.template .env
 
 # Ask for domain name
 read -p "Enter your domain name (e.g., your.domain.name): " domain_name
+sed -i "s/your.domain.name/$domain_name/g" /etc/nginx/sites-available/mirotalk
 
 # Ask for email address
-read -p "Enter your email address: " email_address
-
-# Replace placeholders with actual values in Nginx configuration
-sed -i "s/your.domain.name/$domain_name/g" /etc/nginx/sites-available/mirotalk
+read -p "Enter your email address for SSL certificate: " email_address
 sed -i "s/your-email@example.com/$email_address/g" /etc/nginx/sites-available/mirotalk
 
 # Install dependencies
@@ -68,8 +66,24 @@ sudo certbot --nginx --agree-tos --redirect --hsts --staple-ocsp --email $email_
 # Install PM2 globally
 sudo npm install -g pm2
 
+# Create ecosystem.config.js
+echo "module.exports = {
+  apps: [{
+    name: 'mirotalk',
+    script: './app/src/server.js',
+    watch: '.',
+    instances: 1,
+    autorestart: true,
+    exec_mode: 'fork',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3010
+    }
+  }]
+}" >> ecosystem.config.js
+
 # Start the server using PM2
-pm2 start npm --name "mirotalk" -- start
+pm2 start ecosystem.config.js
 
 # Save PM2 process list and set it to run on startup
 pm2 save
