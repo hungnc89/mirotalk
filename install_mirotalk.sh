@@ -21,11 +21,9 @@ cp .env.template .env
 
 # Ask for domain name
 read -p "Enter your domain name (e.g., your.domain.name): " domain_name
-sed -i "s/your.domain.name/$domain_name/g" ecosystem.config.js
 
-# Ask for email address
-read -p "Enter your email address: " email_address
-sed -i "s/your-email@example.com/$email_address/g" ecosystem.config.js
+# Update domain name in Nginx configuration
+sudo sed -i "s/your.domain.name/$domain_name/g" /etc/nginx/sites-available/mirotalk
 
 # Install dependencies
 npm install
@@ -60,17 +58,17 @@ sudo add-apt-repository -y ppa:certbot/certbot
 sudo apt update
 sudo apt install -y certbot python3-certbot-nginx
 
+# Ask for email address
+read -p "Enter your email address: " email_address
+
 # Obtain SSL certificate from Let's Encrypt
 sudo certbot --nginx --agree-tos --redirect --hsts --staple-ocsp --email $email_address -d $domain_name
 
 # Install PM2 globally
 sudo npm install -g pm2
 
-# Generate ecosystem.config.js file
-pm2 ecosystem
-
 # Start the server using PM2
-pm2 start ecosystem.config.js
+pm2 start npm --name "mirotalk" -- start
 
 # Save PM2 process list and set it to run on startup
 pm2 save
