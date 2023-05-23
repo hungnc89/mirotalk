@@ -5,7 +5,7 @@ sudo apt update
 sudo apt upgrade -y
 
 # Install dependencies
-sudo apt install -y curl git nginx
+sudo apt install -y curl git nginx software-properties-common
 
 # Install Node.js 18.x and npm
 curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -50,6 +50,14 @@ sudo ln -s /etc/nginx/sites-available/mirotalk /etc/nginx/sites-enabled/mirotalk
 
 # Restart Nginx
 sudo systemctl restart nginx
+
+# Install Certbot and obtain SSL certificate
+sudo add-apt-repository -y ppa:certbot/certbot
+sudo apt update
+sudo apt install -y certbot python3-certbot-nginx
+
+# Obtain SSL certificate from Let's Encrypt
+sudo certbot --nginx --agree-tos --redirect --hsts --staple-ocsp --email your-email@example.com -d $domain_name
 
 # Install PM2 globally
 sudo npm install -g pm2
